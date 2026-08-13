@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SDIT ANNISA - Sistem Administrasi & Profil Sekolah</title>
   
   <!-- Official School Logo Favicon -->
@@ -72,9 +72,9 @@
           <i class="fa-solid fa-caret-left" id="sidebarToggleIcon"></i>
         </button>
 
-        <img src="logo_annisa.png" alt="Logo SDIT ANNISA" style="height:34px;width:34px;object-fit:contain;">
-        <span class="school-tag-badge"><i class="fa-solid fa-shield-halved"></i> SDIT ANNISA Terakreditasi A</span>
-        <span class="page-subtitle" id="currentDateDisplay">Loading...</span>
+        <img src="logo_annisa.png" alt="Logo SDIT ANNISA" class="top-bar-logo">
+        <span class="school-tag-badge"><i class="fa-solid fa-shield-halved"></i> SDIT ANNISA</span>
+        <span class="page-subtitle date-text-hide" id="currentDateDisplay">Loading...</span>
       </div>
 
       <div class="top-bar-right">
@@ -87,14 +87,29 @@
 
     <!-- SECTION 1: DASHBOARD -->
     <section id="dashboard" class="page-section">
-      <div class="page-top">
-        <div class="page-title">
-          <h1>Selamat Datang 👋</h1>
-          <p class="page-subtitle">Ringkasan statistik data Administrasi SDIT ANNISA hari ini</p>
-        </div>
-        <!-- TOMBOL "LIHAT PROFIL SEKOLAH" DAN "EXPORT DATA BACKUP" HANYA TAMPIL SAAT ADMIN LOGIN -->
-        <div id="adminDashHeaderBtnWrapper">
-          <!-- Dynamic injected when logged in as Admin -->
+      
+      <!-- HERO BANNER SELAMAT DATANG DI SDIT ANNISA -->
+      <div class="dash-welcome-banner">
+        <div class="welcome-banner-content">
+          <div class="welcome-banner-main">
+            <img src="logo_annisa.png" alt="Logo Resmi SDIT ANNISA" class="welcome-banner-logo">
+            <div>
+              <div class="welcome-small-tag">Portal Resmi Terpadu</div>
+              <h1 class="welcome-banner-title">Selamat Datang di SDIT ANNISA</h1>
+              <p class="welcome-banner-subtitle">Mendidik Generasi Rabbani yang Unggul, Beradab, dan Bertaqwa Berlandaskan Al-Qur'an dan As-Sunnah.</p>
+              
+              <div class="welcome-chips-wrapper">
+                <span class="welcome-chip"><i class="fa-solid fa-award"></i> Akreditasi: <strong>A (Sangat Baik)</strong></span>
+                <span class="welcome-chip"><i class="fa-solid fa-hashtag"></i> NPSN: <strong>20231556</strong></span>
+                <span class="welcome-chip"><i class="fa-solid fa-calendar-days"></i> T.A <strong>2026/2027</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- TOMBOL HEADER DASHBOARD KHUSUS ADMIN LOGIN -->
+          <div id="adminDashHeaderBtnWrapper">
+            <!-- Dynamic injected when logged in as Admin -->
+          </div>
         </div>
       </div>
 

@@ -34,12 +34,14 @@
   padding: 0;
 }
 
-body {
+html, body {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: var(--bg-main);
   color: var(--text-main);
   line-height: 1.6;
-  overflow-x: hidden;
 }
 
 /* SIDEBAR STYLING & COLLAPSIBLE ANIMATION */
@@ -204,11 +206,15 @@ body {
   margin-left: 270px;
   padding: 24px 32px 40px;
   min-height: 100vh;
-  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  width: calc(100% - 270px);
+  max-width: 100%;
+  overflow-x: hidden;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .main.expanded {
   margin-left: 76px;
+  width: calc(100% - 76px);
 }
 
 /* TOP HEADER BAR & SIDEBAR TOGGLE BUTTON */
@@ -222,12 +228,19 @@ body {
   padding: 14px 24px;
   margin-bottom: 28px;
   box-shadow: var(--shadow-sm);
+  max-width: 100%;
 }
 
 .top-bar-left {
   display: flex;
   align-items: center;
   gap: 14px;
+}
+
+.top-bar-logo {
+  height: 34px;
+  width: 34px;
+  object-fit: contain;
 }
 
 /* TOMBOL TOGGLE SIDEBAR DENGAN ICON SEGITIGA PRESISI (◀ / ▶) */
@@ -265,6 +278,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
 }
 
 .top-bar-right {
@@ -315,6 +329,110 @@ body {
   border-radius: 50%;
 }
 
+/* DASHBOARD WELCOME HERO BANNER */
+.dash-welcome-banner {
+  background: linear-gradient(135deg, #0f172a 0%, #1e40af 50%, #0d9488 100%);
+  border-radius: 24px;
+  padding: 32px 36px;
+  color: #ffffff;
+  box-shadow: 0 16px 36px rgba(30, 64, 175, 0.22);
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+}
+
+.dash-welcome-banner::after {
+  content: "";
+  position: absolute;
+  bottom: -60px;
+  right: -60px;
+  width: 240px;
+  height: 240px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.welcome-banner-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.welcome-banner-main {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+}
+
+.welcome-banner-logo {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
+}
+
+.welcome-small-tag {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #93c5fd;
+  margin-bottom: 6px;
+}
+
+.welcome-banner-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.welcome-banner-subtitle {
+  font-size: 13px;
+  color: #cbd5e1;
+  margin-top: 6px;
+  max-width: 620px;
+  line-height: 1.5;
+}
+
+.welcome-chips-wrapper {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.welcome-chip {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #f1f5f9;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
 /* PAGE HEADINGS */
 .page-top {
   display: flex;
@@ -354,6 +472,7 @@ body {
   padding: 22px;
   box-shadow: var(--shadow-sm);
   transition: transform 0.2s, box-shadow 0.2s;
+  max-width: 100%;
 }
 
 .card:hover, .panel:hover {
@@ -399,6 +518,7 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  width: 100%;
 }
 
 .berita-card-minimal:hover {
@@ -415,7 +535,6 @@ body {
   background: #0f172a;
 }
 
-/* SLIDE CAROUSEL CONTAINER */
 .berita-carousel-track {
   display: flex;
   width: 100%;
@@ -445,7 +564,6 @@ body {
   z-index: 5;
 }
 
-/* TOMBOL NAVIGASI SLIDE KIRI & KANAN (❮ / ❯) */
 .berita-slide-btn {
   position: absolute;
   top: 50%;
@@ -473,7 +591,6 @@ body {
 .berita-slide-btn.prev { left: 8px; }
 .berita-slide-btn.next { right: 8px; }
 
-/* DOTS INDIKATOR SLIDE */
 .berita-slide-dots {
   position: absolute;
   bottom: 8px;
@@ -991,8 +1108,8 @@ body {
 /* GURU CARDS GRID */
 .guru-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 18px;
   margin-top: 10px;
 }
 
@@ -1000,7 +1117,7 @@ body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 20px;
-  padding: 22px;
+  padding: 20px;
   box-shadow: var(--shadow-sm);
   transition: all 0.25s ease;
   display: flex;
@@ -1105,8 +1222,8 @@ body {
 /* LULUSAN CARDS GRID */
 .lulusan-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 18px;
   margin-top: 10px;
 }
 
@@ -1114,7 +1231,7 @@ body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 20px;
-  padding: 22px;
+  padding: 20px;
   box-shadow: var(--shadow-sm);
   transition: all 0.25s ease;
   display: flex;
@@ -1142,18 +1259,18 @@ body {
 }
 
 .lulusan-card-name-top {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 800;
   color: var(--text-main);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   line-height: 1.35;
 }
 
 .lulusan-card-photo-frame {
-  width: 120px;
-  height: 140px;
-  margin: 0 auto 14px;
-  border-radius: 18px;
+  width: 110px;
+  height: 130px;
+  margin: 0 auto 12px;
+  border-radius: 16px;
   padding: 4px;
   background: linear-gradient(135deg, #d97706, #2563eb);
   box-shadow: 0 6px 18px rgba(217, 119, 6, 0.18);
@@ -1164,7 +1281,7 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 14px;
+  border-radius: 12px;
   background: #f1f5f9;
 }
 
@@ -1175,9 +1292,9 @@ body {
   background: #fffbeb;
   color: #b45309;
   border: 1px solid #fde68a;
-  padding: 5px 14px;
+  padding: 4px 12px;
   border-radius: 20px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -1265,6 +1382,7 @@ body {
   gap: 8px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .btn:hover {
@@ -1378,6 +1496,7 @@ textarea {
   display: flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .toolbar input {
@@ -1388,6 +1507,7 @@ textarea {
   overflow-x: auto;
   border-radius: 12px;
   border: 1px solid var(--border);
+  max-width: 100%;
 }
 
 table {
@@ -1419,12 +1539,12 @@ tr:hover td {
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(15, 23, 42, 0.65);
   backdrop-filter: blur(6px);
   display: none;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 16px;
   z-index: 1000;
 }
 
@@ -1435,7 +1555,7 @@ tr:hover td {
 .modal-box {
   background: #ffffff;
   border-radius: 20px;
-  padding: 28px;
+  padding: 24px;
   width: min(760px, 100%);
   max-height: 90vh;
   overflow-y: auto;
@@ -1452,13 +1572,13 @@ tr:hover td {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 14px;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
   border-bottom: 1px solid var(--border);
 }
 
 .modal-header h2 {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -1504,8 +1624,13 @@ tr:hover td {
   to { opacity: 1; }
 }
 
-/* MOBILE RESPONSIVE MEDIA QUERIES (WIDTH <= 768PX) */
+/* MOBILE RESPONSIVE MEDIA QUERIES (PERBAIKAN TOTAL LAYAR HP WIDTH <= 768PX & <= 480PX) */
 @media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden !important;
+    width: 100vw !important;
+  }
+
   /* SIDEBAR AUTO-HIDE SECARA DEFAULT DI HP */
   .sidebar {
     position: fixed;
@@ -1525,110 +1650,171 @@ tr:hover td {
     box-shadow: 10px 0 35px rgba(0, 0, 0, 0.5) !important;
   }
 
-  .sidebar.mobile-open .brand-info,
-  .sidebar.mobile-open .nav-section-title,
-  .sidebar.mobile-open .nav button span {
-    display: inline-block !important;
-  }
-
-  .sidebar.mobile-open .brand {
-    justify-content: flex-start !important;
-  }
-
-  .sidebar.mobile-open .nav button {
-    justify-content: flex-start !important;
-    padding: 11px 14px !important;
-  }
-
-  /* KONTEN UTAMA MENYATU RAPI TANPA MARGIN SIDEBAR DI HP */
+  /* KONTEN UTAMA MENYATU RAPI TANPA MARGIN SIDEBAR DI HP & ZERO SIDE SCROLL */
   .main {
     margin-left: 0 !important;
-    padding: 14px 14px 30px !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    padding: 12px 10px 30px !important;
+    overflow-x: hidden !important;
   }
 
   /* TOP HEADER MOBILE FIT & RINGKAS */
   .top-bar-header {
-    padding: 10px 14px !important;
-    margin-bottom: 16px !important;
+    padding: 8px 12px !important;
+    margin-bottom: 14px !important;
     border-radius: 14px !important;
   }
 
   .top-bar-left {
-    gap: 8px !important;
+    gap: 6px !important;
   }
 
   .school-tag-badge {
-    font-size: 11px !important;
+    font-size: 10px !important;
     padding: 3px 8px !important;
   }
 
-  #currentDateDisplay {
+  .date-text-hide {
     display: none !important;
   }
 
-  .page-top {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-
-  .page-title h1 {
-    font-size: 20px;
-  }
-
-  /* GRID CARDS DI LAYAR HP (2 KOLOM RINGKAS) */
-  .cards {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
+  /* DASHBOARD WELCOME HERO BANNER MOBILE */
+  .dash-welcome-banner {
+    padding: 20px 16px !important;
+    border-radius: 18px !important;
     margin-bottom: 16px !important;
   }
 
-  .card {
-    padding: 14px !important;
+  .welcome-banner-main {
+    gap: 12px !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+
+  .welcome-banner-logo {
+    width: 52px !important;
+    height: 52px !important;
+    border-radius: 12px !important;
+  }
+
+  .welcome-banner-title {
+    font-size: 20px !important;
+  }
+
+  .welcome-banner-subtitle {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+  }
+
+  .welcome-chips-wrapper {
+    gap: 6px !important;
+    margin-top: 10px !important;
+  }
+
+  .welcome-chip {
+    font-size: 10px !important;
+    padding: 3px 8px !important;
+  }
+
+  /* GRID CARDS DI LAYAR HP (2 KOLOM RINGKAS & FIT) */
+  .cards {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .card, .panel {
+    padding: 12px !important;
     border-radius: 14px !important;
   }
 
   .stat-number {
-    font-size: 24px !important;
-    margin-top: 4px !important;
+    font-size: 22px !important;
+    margin-top: 2px !important;
   }
 
-  .grid-2, .grid-3, .grid-4, .form-grid, .identitas-grid, .student-detail-grid, .guru-cards-grid, .lulusan-cards-grid {
+  .berita-img-frame {
+    height: 140px !important;
+  }
+
+  .berita-snippet-text {
+    -webkit-line-clamp: 2 !important;
+  }
+
+  .grid-2, .grid-3, .grid-4, .form-grid, .identitas-grid, .student-detail-grid {
     grid-template-columns: 1fr !important;
     gap: 12px !important;
   }
 
+  .guru-cards-grid, .lulusan-cards-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .guru-card-minimal, .lulusan-card-minimal {
+    padding: 12px !important;
+    border-radius: 14px !important;
+  }
+
+  .guru-card-photo-frame, .lulusan-card-photo-frame {
+    width: 90px !important;
+    height: 110px !important;
+    margin: 10px auto 6px !important;
+  }
+
+  .guru-card-teacher-name, .lulusan-card-name-top {
+    font-size: 13px !important;
+  }
+
   .profil-hero {
-    padding: 24px 18px !important;
+    padding: 20px 14px !important;
     border-radius: 18px !important;
   }
 
   .profil-hero-text h1 {
-    font-size: 22px !important;
+    font-size: 20px !important;
   }
 
   .sambutan-card {
-    padding: 18px !important;
+    padding: 16px !important;
     border-radius: 18px !important;
   }
 
   .headmaster-photo-frame {
-    width: 170px !important;
-    height: 200px !important;
+    width: 130px !important;
+    height: 155px !important;
   }
 
   .sambutan-grid {
     grid-template-columns: 1fr !important;
-    gap: 16px !important;
+    gap: 14px !important;
   }
 
   .letter-paper {
-    padding: 14px 16px !important;
+    padding: 10px 12px !important;
+    font-size: 10pt !important;
+  }
+
+  .modal {
+    padding: 10px !important;
   }
 
   .modal-box {
-    padding: 16px !important;
+    padding: 14px !important;
     border-radius: 16px !important;
+    max-height: 94vh !important;
+  }
+
+  .modal-header h2 {
+    font-size: 16px !important;
+  }
+
+  .form-group.full-width {
+    grid-column: span 1 !important;
+  }
+
+  .toolbar input {
+    max-width: 100% !important;
   }
 }

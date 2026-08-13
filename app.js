@@ -5,8 +5,7 @@
 const DB_KEY = 'sdit_annisa_db_v2';
 const ADMIN_PASSWORD_CORRECT = 'hdt123';
 
-// 🌟 ISI DENGAN URL APPS SCRIPT ANDA DARI GOOGLE SHEETS
-// Contoh: "https://script.google.com/macros/s/AKfycbx.../exec"
+// 🌟 URL APPS SCRIPT AKTIF GOOGLE SHEETS DATABASE (REAL-TIME CLOUD SYNC LAPTOP & HP)
 const GOOGLE_SHEETS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyX0v9Cq9eD3I3Ov3dLpq0p5DjAsG0GvlQp92LpqyfOlqbgdSfoYpTmcumyIwVFTNXj/exec";
 
 // INITIAL DEFAULT STATE (NPSN: 20231556, NAMA KEPALA SEKOLAH: Abdul Yakub, S.Ag)
@@ -442,7 +441,7 @@ function updateAdminUIState() {
   if (dashHeaderBtnWrapper) {
     if (isAdminLoggedIn) {
       dashHeaderBtnWrapper.innerHTML = `
-        <div style="display:flex;gap:10px;align-items:center;">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
           <button class="btn btn-secondary" onclick="quickNav('profil')">
             <i class="fa-solid fa-school"></i> 🏫 Lihat Profil Sekolah
           </button>
@@ -756,7 +755,7 @@ function openFormModalBerita(idx = -1) {
 
         <div class="form-group full-width">
           <label>Unggah Galeri Foto Berita (Pilih 1 atau Banyak Foto Sekaligus)</label>
-          <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;">
+          <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
             <button type="button" class="btn btn-emerald" onclick="triggerBeritaPhotosUpload()">
               <i class="fa-solid fa-file-arrow-up"></i> 📤 Unggah File Foto Berita (Bisa Banyak)
             </button>
