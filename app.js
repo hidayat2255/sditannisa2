@@ -5,7 +5,7 @@
 const DB_KEY = 'sdit_annisa_db_v2';
 const ADMIN_PASSWORD_CORRECT = 'hdt123';
 
-// 🌟 URL APPS SCRIPT AKTIF GOOGLE SHEETS DATABASE (REAL-TIME CLOUD SYNC LAPTOP & HP)
+// 🌟 URL APPS SCRIPT AKTIF GOOGLE SHEETS DATABASE & GOOGLE DRIVE FOLDER
 const GOOGLE_SHEETS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyX0v9Cq9eD3I3Ov3dLpq0p5DjAsG0GvlQp92LpqyfOlqbgdSfoYpTmcumyIwVFTNXj/exec";
 
 // INITIAL DEFAULT STATE (NPSN: 20231556, NAMA KEPALA SEKOLAH: Abdul Yakub, S.Ag)
@@ -107,6 +107,8 @@ let selectedLulusanIndexForPhotoUpload = -1;
 let selectedSuratIndexForFileUpload = -1;
 let currentActiveRoomNameForInventaris = '';
 let tempUploadedBeritaPhotos = [];
+let tempUploadedSingleFormPhoto = '';
+let tempUploadedFotoKepala = '';
 let beritaAutoSlideIntervals = [];
 
 // CONFIG FOR DYNAMIC MASTER TABLES
@@ -129,10 +131,10 @@ const SISWA_DAPODIK_FIELDS = [
 ];
 
 const TEMPLATE_SAMPLES = {
-  guru: ["Contoh Nama Guru, S.Pd.", "Guru Kelas 1", "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80"],
+  guru: ["Contoh Nama Guru, S.Pd.", "Guru Kelas 1", ""],
   siswa: ["Contoh Nama Siswa", "3200809988", "Jakarta", "30/12/2016", "Jl. Contoh Raya No. 10", "1", "2", "Jatiasih", "Kec. Jatiasih", "Nama Ayah Contoh", "Nama Ibu Contoh", "Kelas 1A-IBNU SINA", "TK Contoh"],
   masuk: ["Contoh Nama Siswa Masuk", "Kelas 1A-IBNU SINA", "15/07/2024", "TK Asal Contoh", "Jl. Contoh Alamat No. 10"],
-  lulusan: ["Contoh Nama Alumni", "Angkatan 2025/2026", "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80"],
+  lulusan: ["Contoh Nama Alumni", "Angkatan 2025/2026", ""],
   administrasi: ["Surat Keluar", "015/SDIT_ANNISA/VIII/2025", "10/08/2025", "Permohonan Pindah Sekolah", "Orang Tua Siswa", "", "Telah diarsipkan"],
   inventaris: ["Ruang Kelas 1", "Meja Siswa", "20", "Unit", "Baik", "Keterangan Contoh"]
 };
@@ -148,7 +150,48 @@ document.addEventListener('DOMContentLoaded', () => {
   syncFromGoogleSheetsCloud();
 });
 
-// CLOUD SYNC WITH GOOGLE SHEETS API
+// CLOUD SYNC WITH GOOGLE SHEETS API & GOOGLE DRIVE UPLOAD
+function uploadFileToGoogleDriveCloud(file, callback) {
+  if (!GOOGLE_SHEETS_WEB_APP_URL || GOOGLE_SHEETS_WEB_APP_URL.trim() === '') {
+    const reader = new FileReader();
+    reader.onload = (e) => callback(e.target.result);
+    reader.readAsDataURL(file);
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    const base64Data = dataUrl.split(',')[1];
+    
+    const payload = {
+      action: "uploadFile",
+      fileName: file.name,
+      mimeType: file.type || "application/octet-stream",
+      base64Data: base64Data
+    };
+
+    fetch(GOOGLE_SHEETS_WEB_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data && data.status === 'success' && data.fileUrl) {
+        callback(data.fileUrl);
+      } else {
+        callback(dataUrl);
+      }
+    })
+    .catch(err => {
+      console.warn('Google Drive Upload fallback to local DataURL:', err);
+      callback(dataUrl);
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
 function syncFromGoogleSheetsCloud() {
   if (!GOOGLE_SHEETS_WEB_APP_URL || GOOGLE_SHEETS_WEB_APP_URL.trim() === '') return;
 
@@ -414,7 +457,7 @@ function handleAdminLoginSubmit(e) {
     sessionStorage.setItem('sdit_admin_logged_in', 'true');
     closeModal('adminAuthModal');
     updateAdminUIState();
-    alert('🎉 Login Admin Berhasil!\n\nSeluruh menu Edit, Hapus, Tambah Data, Unggah Foto, Unggah File Surat PDF/Dokumen, Unduh Excel Ruangan Inventaris, Menu Sistem Backup/Restore, serta Unduh/Unggah Excel telah diaktifkan.');
+    alert('🎉 Login Admin Berhasil!\n\nSeluruh menu Edit, Hapus, Tambah Data, Unggah Foto Google Drive, Unggah File Surat PDF/Dokumen, Unduh Excel Ruangan Inventaris, Menu Sistem Backup/Restore, serta Unduh/Unggah Excel telah diaktifkan.');
     refreshCurrentSection();
   } else {
     alert('❌ Password Salah!');
@@ -662,7 +705,7 @@ function goToBeritaSlide(bIdx, slideIdx) {
   }
 }
 
-// UPLOAD BANYAK FOTO BERITA KHUSUS ADMIN
+// UPLOAD BANYAK FOTO BERITA KHUSUS ADMIN (AUTOMATIC GOOGLE DRIVE FOLDER SYNC)
 function triggerBeritaPhotosUpload() {
   document.getElementById('beritaPhotosFileInput').value = '';
   document.getElementById('beritaPhotosFileInput').click();
@@ -674,15 +717,13 @@ function handleBeritaPhotosUpload(event) {
 
   let loadedCount = 0;
   files.forEach(file => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      tempUploadedBeritaPhotos.push(e.target.result);
+    uploadFileToGoogleDriveCloud(file, (finalUrl) => {
+      tempUploadedBeritaPhotos.push(finalUrl);
       loadedCount++;
       if (loadedCount === files.length) {
         updateBeritaPhotoPreviewList();
       }
-    };
-    reader.readAsDataURL(file);
+    });
   });
 }
 
@@ -697,7 +738,7 @@ function updateBeritaPhotoPreviewList() {
 
   if (tempUploadedBeritaPhotos.length === 0) {
     previewBox.innerHTML = `
-      <div style="font-size:12px;color:var(--text-muted);text-align:center;padding:10px;border:1px dashed var(--border);border-radius:10px;">
+      <div style="font-size:12px;color:var(--text-muted);text-align:center;padding:12px;border:1px dashed var(--border);border-radius:10px;">
         Belum ada foto diunggah. Klik <strong>"📤 Unggah File Foto Berita"</strong> di atas.
       </div>
     `;
@@ -706,7 +747,7 @@ function updateBeritaPhotoPreviewList() {
 
   previewBox.innerHTML = `
     <div style="font-size:12px;font-weight:700;color:var(--emerald);margin-bottom:8px;">
-      <i class="fa-solid fa-images"></i> Terunggah ${tempUploadedBeritaPhotos.length} Foto (Mode Slide Otomatis Aktif):
+      <i class="fa-solid fa-images"></i> Terunggah ${tempUploadedBeritaPhotos.length} Foto (Tersimpan di Google Drive):
     </div>
     <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;">
       ${tempUploadedBeritaPhotos.map((url, idx) => `
@@ -755,22 +796,17 @@ function openFormModalBerita(idx = -1) {
         </div>
 
         <div class="form-group full-width">
-          <label>Unggah Galeri Foto Berita (Pilih 1 atau Banyak Foto Sekaligus)</label>
+          <label>Unggah File Foto Berita (Otomatis Masuk ke Folder Google Drive SDIT ANNISA)</label>
           <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
             <button type="button" class="btn btn-emerald" onclick="triggerBeritaPhotosUpload()">
               <i class="fa-solid fa-file-arrow-up"></i> 📤 Unggah File Foto Berita (Bisa Banyak)
             </button>
-            <span style="font-size:12px;color:var(--text-muted)">Dapat memilih lebih dari 1 foto untuk mode slide otomatis.</span>
+            <span style="font-size:12px;color:var(--text-muted)">Seluruh foto akan otomatis terkumpul di Google Drive.</span>
           </div>
 
           <div id="beritaPhotoPreviewBox">
             <!-- Dynamic Uploaded Photo Previews -->
           </div>
-        </div>
-
-        <div class="form-group full-width">
-          <label>Atau Input Manual URL Foto (Pisahkan koma jika lebih dari 1 URL)</label>
-          <input type="text" id="fBeritaFotoUrlInput" placeholder="https://..., https://..." value="${esc(tempUploadedBeritaPhotos.filter(p => p.startsWith('http')).join(', '))}">
         </div>
 
         <div class="form-group full-width">
@@ -793,18 +829,7 @@ function openFormModalBerita(idx = -1) {
 function saveBeritaForm(e, idx) {
   e.preventDefault();
 
-  const urlInputRaw = document.getElementById('fBeritaFotoUrlInput').value.trim();
-  let manualUrls = [];
-  if (urlInputRaw) {
-    manualUrls = urlInputRaw.split(',').map(s => s.trim()).filter(s => s.length > 0);
-  }
-
   let finalPhotos = [...tempUploadedBeritaPhotos];
-  manualUrls.forEach(url => {
-    if (!finalPhotos.includes(url)) {
-      finalPhotos.push(url);
-    }
-  });
 
   if (finalPhotos.length === 0) {
     finalPhotos = ["https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=600&q=80"];
@@ -830,7 +855,7 @@ function saveBeritaForm(e, idx) {
   saveDatabase();
   closeModal('formModal');
   renderBeritaGrid();
-  alert('✨ Berita / Informasi Sekolah berhasil disimpan (Mode Slide Otomatis Aktif)!');
+  alert('✨ Berita / Informasi Sekolah berhasil disimpan (Foto Tersimpan di Google Drive)!');
 }
 
 function deleteBerita(idx) {
@@ -846,7 +871,7 @@ function deleteBerita(idx) {
   }
 }
 
-// PROFIL SEKOLAH RENDER ENGINE
+// PROFIL SEKOLAH RENDER ENGINE & FOTO KEPALA SEKOLAH GOOGLE DRIVE UPLOAD
 function renderProfilView() {
   const p = db.profil || DEFAULT_PROFIL;
 
@@ -885,6 +910,22 @@ function renderProfilView() {
   }
 }
 
+function triggerFotoKepalaUpload() {
+  document.getElementById('fotoKepalaFileInput').value = '';
+  document.getElementById('fotoKepalaFileInput').click();
+}
+
+function handleFotoKepalaUploadSubmit(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  uploadFileToGoogleDriveCloud(file, (finalUrl) => {
+    tempUploadedFotoKepala = finalUrl;
+    const previewEl = document.getElementById('editFotoKepalaPreview');
+    if (previewEl) previewEl.src = tempUploadedFotoKepala;
+  });
+}
+
 function openEditProfilModal() {
   if (!isAdminLoggedIn) {
     handleAdminIconClick();
@@ -892,9 +933,11 @@ function openEditProfilModal() {
   }
 
   const p = db.profil || DEFAULT_PROFIL;
+  tempUploadedFotoKepala = p.fotoKepala || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80';
+
   document.getElementById('editNamaKepala').value = p.namaKepala || 'Abdul Yakub, S.Ag';
   document.getElementById('editJabatanKepala').value = p.jabatanKepala || 'Kepala Sekolah SDIT ANNISA';
-  document.getElementById('editFotoKepala').value = p.fotoKepala || '';
+  document.getElementById('editFotoKepalaPreview').src = tempUploadedFotoKepala;
   document.getElementById('editSambutanText').value = p.sambutanText || '';
 
   document.getElementById('editVisiText').value = p.visiText || '';
@@ -924,7 +967,7 @@ function saveProfilEdits(e) {
     kota: db.profil.kota || DEFAULT_PROFIL.kota,
     namaKepala: document.getElementById('editNamaKepala').value,
     jabatanKepala: document.getElementById('editJabatanKepala').value,
-    fotoKepala: document.getElementById('editFotoKepala').value,
+    fotoKepala: tempUploadedFotoKepala || DEFAULT_PROFIL.fotoKepala,
     sambutanText: document.getElementById('editSambutanText').value,
     visiText: document.getElementById('editVisiText').value,
     misiList: misiArr,
@@ -950,7 +993,7 @@ function resetProfilDefault() {
   }
 }
 
-// HANDLER UNGGAH FOTO GURU & LULUSAN KHUSUS ADMIN
+// HANDLER UNGGAH FOTO GURU & LULUSAN KHUSUS ADMIN (CARD CAMERA CLICK TO GOOGLE DRIVE)
 function triggerGuruPhotoUpload(realIdx) {
   if (!isAdminLoggedIn) {
     alert('Silakan login via Icon Admin (👤) terlebih dahulu untuk mengunggah foto.');
@@ -966,16 +1009,14 @@ function handleGuruPhotoUploadSubmit(event) {
   const file = event.target.files[0];
   if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = (e) => {
+  uploadFileToGoogleDriveCloud(file, (finalUrl) => {
     if (selectedGuruIndexForPhotoUpload >= 0 && db.guru[selectedGuruIndexForPhotoUpload]) {
-      db.guru[selectedGuruIndexForPhotoUpload].Foto = e.target.result;
+      db.guru[selectedGuruIndexForPhotoUpload].Foto = finalUrl;
       saveDatabase();
       renderTable('guru');
-      alert(`🎉 Foto guru ${db.guru[selectedGuruIndexForPhotoUpload].Nama} berhasil diperbarui!`);
+      alert(`🎉 Foto guru ${db.guru[selectedGuruIndexForPhotoUpload].Nama} berhasil disimpan ke Google Drive!`);
     }
-  };
-  reader.readAsDataURL(file);
+  });
 }
 
 function triggerLulusanPhotoUpload(realIdx) {
@@ -993,19 +1034,34 @@ function handleLulusanPhotoUploadSubmit(event) {
   const file = event.target.files[0];
   if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = (e) => {
+  uploadFileToGoogleDriveCloud(file, (finalUrl) => {
     if (selectedLulusanIndexForPhotoUpload >= 0 && db.lulusan[selectedLulusanIndexForPhotoUpload]) {
-      db.lulusan[selectedLulusanIndexForPhotoUpload].Foto = e.target.result;
+      db.lulusan[selectedLulusanIndexForPhotoUpload].Foto = finalUrl;
       saveDatabase();
       renderTable('lulusan');
-      alert(`🎉 Foto alumni ${db.lulusan[selectedLulusanIndexForPhotoUpload].Nama} berhasil diperbarui!`);
+      alert(`🎉 Foto alumni ${db.lulusan[selectedLulusanIndexForPhotoUpload].Nama} berhasil disimpan ke Google Drive!`);
     }
-  };
-  reader.readAsDataURL(file);
+  });
 }
 
-// HANDLER UNGGAH FILE SURAT (PDF / DOKUMEN) KHUSUS ADMIN
+// HANDLER FOTO PADA FORM MODAL MASTER DATA (GURU & ALUMNI)
+function triggerFormModalPhotoUpload() {
+  document.getElementById('fotoFormModalFileInput').value = '';
+  document.getElementById('fotoFormModalFileInput').click();
+}
+
+function handleFormModalPhotoUploadSubmit(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  uploadFileToGoogleDriveCloud(file, (finalUrl) => {
+    tempUploadedSingleFormPhoto = finalUrl;
+    const previewEl = document.getElementById('formModalPhotoPreview');
+    if (previewEl) previewEl.src = tempUploadedSingleFormPhoto;
+  });
+}
+
+// HANDLER UNGGAH FILE SURAT (PDF / DOKUMEN) KHUSUS ADMIN TO GOOGLE DRIVE FOLDER
 function triggerSuratFileUpload(realIdx) {
   if (!isAdminLoggedIn) {
     alert('Silakan login via Icon Admin (👤) terlebih dahulu untuk mengunggah berkas surat.');
@@ -1021,17 +1077,15 @@ function handleSuratFileUploadSubmit(event) {
   const file = event.target.files[0];
   if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = (e) => {
+  uploadFileToGoogleDriveCloud(file, (finalUrl) => {
     if (selectedSuratIndexForFileUpload >= 0 && db.administrasi[selectedSuratIndexForFileUpload]) {
-      db.administrasi[selectedSuratIndexForFileUpload]['File Surat'] = e.target.result;
+      db.administrasi[selectedSuratIndexForFileUpload]['File Surat'] = finalUrl;
       db.administrasi[selectedSuratIndexForFileUpload]['Nama File'] = file.name;
       saveDatabase();
       renderTable('administrasi');
-      alert(`🎉 Berkas surat "${file.name}" berhasil diunggah!`);
+      alert(`🎉 Berkas surat "${file.name}" berhasil diunggah ke Google Drive!`);
     }
-  };
-  reader.readAsDataURL(file);
+  });
 }
 
 function openSuratFileDocument(realIdx) {
@@ -1043,23 +1097,11 @@ function openSuratFileDocument(realIdx) {
   const dataUrl = row['File Surat'];
   const fileName = row['Nama File'] || 'Dokumen_Surat';
 
-  const win = window.open();
-  if (win) {
-    win.document.write(`
-      <html>
-        <head><title>${esc(fileName)}</title></head>
-        <body style="margin:0;padding:0;background:#0e1726;display:flex;flex-direction:column;height:100vh;">
-          <div style="background:#1e293b;color:#fff;padding:12px 20px;font-family:sans-serif;font-size:14px;display:flex;justify-content:space-between;align-items:center;">
-            <span>📄 Dokumen Surat: <strong>${esc(fileName)}</strong></span>
-            <a href="${dataUrl}" download="${esc(fileName)}" style="background:#059669;color:#fff;padding:6px 14px;border-radius:6px;text-decoration:none;font-weight:bold;">📥 Unduh File</a>
-          </div>
-          <iframe src="${dataUrl}" frameborder="0" style="flex:1;width:100%;height:100%;"></iframe>
-        </body>
-      </html>
-    `);
-  } else {
+  const win = window.open(dataUrl, '_blank');
+  if (!win) {
     const a = document.createElement('a');
     a.href = dataUrl;
+    a.target = '_blank';
     a.download = fileName;
     a.click();
   }
@@ -2052,7 +2094,7 @@ function showSiswaDetailModal(idx) {
   openModal('detailSiswaModal');
 }
 
-// MASTER FORM MODAL HANDLERS (ADMIN)
+// MASTER FORM MODAL HANDLERS (ADMIN) - 100% FILE UPLOAD UNTUK GURU & ALUMNI
 function openFormModal(idx = -1) {
   if (!isAdminLoggedIn) {
     handleAdminIconClick();
@@ -2069,18 +2111,44 @@ function openFormModal(idx = -1) {
   const [title, fields] = TABLE_CFG[currentSectionId];
   const row = idx >= 0 ? db[currentSectionId][idx] : {};
 
+  tempUploadedSingleFormPhoto = row.Foto || '';
+
   document.getElementById('formModalTitle').textContent = (idx >= 0 ? 'Edit ' : 'Tambah ') + title;
 
   const bodyEl = document.getElementById('formModalBody');
   bodyEl.innerHTML = `
     <form onsubmit="saveFormModal(event, ${idx})">
       <div class="form-grid">
-        ${fields.filter(f => f !== 'File Surat' && f !== 'Jumlah Inventaris' && f !== 'Detail Inventaris').map(f => `
-          <div class="form-group ${f === 'Foto' || f === 'Keterangan' ? 'full-width' : ''}">
-            <label>${esc(f)}</label>
-            <input type="text" data-field="${esc(f)}" value="${esc(row[f] || '')}" placeholder="${f === 'Foto' ? 'https://...' : ''}">
-          </div>
-        `).join('')}
+        ${fields.filter(f => f !== 'File Surat' && f !== 'Jumlah Inventaris' && f !== 'Detail Inventaris').map(f => {
+          if (f === 'Foto') {
+            const defaultAvatar = currentSectionId === 'guru' ? 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80' : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80';
+            const previewUrl = tempUploadedSingleFormPhoto || defaultAvatar;
+
+            return `
+              <div class="form-group full-width">
+                <label>Unggah Foto (${currentSectionId === 'guru' ? 'Guru' : 'Alumni'})</label>
+                <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+                  <div style="width:70px;height:85px;border-radius:12px;overflow:hidden;border:1px solid var(--border);flex-shrink:0;background:#f1f5f9;">
+                    <img id="formModalPhotoPreview" src="${esc(previewUrl)}" style="width:100%;height:100%;object-fit:cover;">
+                  </div>
+                  <div>
+                    <button type="button" class="btn btn-emerald" onclick="triggerFormModalPhotoUpload()">
+                      <i class="fa-solid fa-camera"></i> 📤 Unggah File Foto
+                    </button>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Foto otomatis tersimpan di Google Drive.</div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+
+          return `
+            <div class="form-group ${f === 'Keterangan' ? 'full-width' : ''}">
+              <label>${esc(f)}</label>
+              <input type="text" data-field="${esc(f)}" value="${esc(row[f] || '')}">
+            </div>
+          `;
+        }).join('')}
       </div>
       <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
         <button type="button" class="btn btn-secondary" onclick="closeModal('formModal')">Batal</button>
@@ -2098,7 +2166,9 @@ function saveFormModal(e, idx) {
   const newRow = idx >= 0 ? { ...db[currentSectionId][idx] } : {};
 
   fields.forEach(f => {
-    if (f !== 'File Surat' && f !== 'Jumlah Inventaris' && f !== 'Detail Inventaris') {
+    if (f === 'Foto') {
+      newRow[f] = tempUploadedSingleFormPhoto || newRow[f] || '';
+    } else if (f !== 'File Surat' && f !== 'Jumlah Inventaris' && f !== 'Detail Inventaris') {
       const input = document.querySelector(`#formModalBody input[data-field="${f}"]`);
       newRow[f] = input ? input.value : (newRow[f] || '');
     }

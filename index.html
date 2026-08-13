@@ -40,7 +40,7 @@
       <button onclick="showSection('masuk', this)" title="Siswa Masuk"><i class="fa-solid fa-user-plus"></i> <span>↪️ Siswa Masuk</span></button>
       <button onclick="showSection('keluar', this)" title="Siswa Keluar"><i class="fa-solid fa-user-minus"></i> <span>↩️ Siswa Keluar</span></button>
       <button onclick="showSection('lulusan', this)" title="Data Lulusan"><i class="fa-solid fa-award"></i> <span>🎓 Data Lulusan</span></button>
-      <button onclick="showSection('kelas', this)" title="Data Kelas"><i class="fa-solid fa-layer-group"></i> <span>🏷️ Data Kelas</span></button>
+      <button onclick="showSection('kelas', this)" title="Data Kelompok Kelas"><i class="fa-solid fa-layer-group"></i> <span>🏷️ Data Kelas</span></button>
 
       <div class="nav-section-title">Aset & Sarpras</div>
       <button onclick="showSection('administrasi', this)" title="Surat & Arsip"><i class="fa-solid fa-file-signature"></i> <span>📄 Surat & Arsip</span></button>
@@ -355,10 +355,12 @@
 
   </main>
 
-  <!-- HIDDEN FILE INPUTS FOR EXCEL, GURU PHOTO, LULUSAN PHOTO, SURAT FILE, & MULTI-PHOTO BERITA -->
+  <!-- HIDDEN FILE INPUTS FOR EXCEL, GURU PHOTO, LULUSAN PHOTO, SURAT FILE, FOTO KEPALA SEKOLAH, FOTO FORM MODAL & MULTI-PHOTO BERITA -->
   <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv, .txt" onchange="handleExcelFileUpload(event)" style="display:none">
   <input type="file" id="guruPhotoFileInput" accept="image/*" onchange="handleGuruPhotoUploadSubmit(event)" style="display:none">
   <input type="file" id="lulusanPhotoFileInput" accept="image/*" onchange="handleLulusanPhotoUploadSubmit(event)" style="display:none">
+  <input type="file" id="fotoKepalaFileInput" accept="image/*" onchange="handleFotoKepalaUploadSubmit(event)" style="display:none">
+  <input type="file" id="fotoFormModalFileInput" accept="image/*" onchange="handleFormModalPhotoUploadSubmit(event)" style="display:none">
   <input type="file" id="suratFileInput" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="handleSuratFileUploadSubmit(event)" style="display:none">
   <input type="file" id="beritaPhotosFileInput" accept="image/*" multiple onchange="handleBeritaPhotosUpload(event)" style="display:none">
 
@@ -403,8 +405,18 @@
             <input type="text" id="editJabatanKepala" required>
           </div>
           <div class="form-group full-width">
-            <label>URL Foto Kepala Sekolah</label>
-            <input type="url" id="editFotoKepala" placeholder="https://..." required>
+            <label>Unggah Foto Kepala Sekolah</label>
+            <div style="display:flex;gap:14px;align-items:center;">
+              <div style="width:70px;height:85px;border-radius:10px;overflow:hidden;border:1px solid var(--border);flex-shrink:0;background:#f1f5f9;">
+                <img id="editFotoKepalaPreview" src="" style="width:100%;height:100%;object-fit:cover;">
+              </div>
+              <div>
+                <button type="button" class="btn btn-emerald" onclick="triggerFotoKepalaUpload()">
+                  <i class="fa-solid fa-camera"></i> 📤 Unggah File Foto Kepala Sekolah
+                </button>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Pilih foto dari Komputer / HP Anda.</div>
+              </div>
+            </div>
           </div>
           <div class="form-group full-width">
             <label>Isi Teks Kata Sambutan</label>
