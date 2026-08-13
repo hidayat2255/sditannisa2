@@ -7,7 +7,7 @@ const ADMIN_PASSWORD_CORRECT = 'hdt123';
 
 // 🌟 ISI DENGAN URL APPS SCRIPT ANDA DARI GOOGLE SHEETS
 // Contoh: "https://script.google.com/macros/s/AKfycbx.../exec"
-const GOOGLE_SHEETS_WEB_APP_URL = "";
+const GOOGLE_SHEETS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyX0v9Cq9eD3I3Ov3dLpq0p5DjAsG0GvlQp92LpqyfOlqbgdSfoYpTmcumyIwVFTNXj/exec";
 
 // INITIAL DEFAULT STATE (NPSN: 20231556, NAMA KEPALA SEKOLAH: Abdul Yakub, S.Ag)
 const DEFAULT_PROFIL = {
