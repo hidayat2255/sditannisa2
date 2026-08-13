@@ -299,6 +299,7 @@ function loadDatabase() {
       guru: [],
       siswa: [],
       masuk: [],
+      keluar: [],
       lulusan: [],
       administrasi: [],
       inventaris: DEFAULT_INVENTARIS_LIST
@@ -413,7 +414,7 @@ function handleAdminLoginSubmit(e) {
     sessionStorage.setItem('sdit_admin_logged_in', 'true');
     closeModal('adminAuthModal');
     updateAdminUIState();
-    alert('🎉 Login Admin Berhasil!\n\nSeluruh menu Edit, Hapus, Tambah Data, Unggah Foto, Unggah File Surat PDF/Dokumen, Kelola Ruangan Inventaris, Menu Sistem Backup/Restore, serta Unduh/Unggah Excel telah diaktifkan.');
+    alert('🎉 Login Admin Berhasil!\n\nSeluruh menu Edit, Hapus, Tambah Data, Unggah Foto, Unggah File Surat PDF/Dokumen, Unduh Excel Ruangan Inventaris, Menu Sistem Backup/Restore, serta Unduh/Unggah Excel telah diaktifkan.');
     refreshCurrentSection();
   } else {
     alert('❌ Password Salah!');
@@ -1341,6 +1342,50 @@ function printSuratDokumen() {
   window.print();
 }
 
+// HANDLER EXPORT INVENTARIS KHUSUS PER RUANGAN DALAM BENTUK EXCEL (.XLSX) KHUSUS ADMIN
+function exportInventarisPerRuangExcel(namaRuang) {
+  if (!isAdminLoggedIn) {
+    alert('Silakan login via Icon Admin (👤) terlebih dahulu.');
+    handleAdminIconClick();
+    return;
+  }
+
+  const allItems = db.inventaris || [];
+  const roomItems = allItems.filter(r => (r['Nama Ruang'] || r.Lokasi || '').trim().toLowerCase() === namaRuang.trim().toLowerCase());
+
+  if (roomItems.length === 0) {
+    alert(`Tidak ada data barang inventaris pada ${namaRuang} untuk diunduh.`);
+    return;
+  }
+
+  try {
+    const headers = ['No', 'Nama Ruang', 'Nama Barang', 'Jumlah (QTY)', 'Satuan', 'Kondisi', 'Keterangan'];
+    const rows = roomItems.map((item, idx) => [
+      idx + 1,
+      item['Nama Ruang'] || namaRuang,
+      item['Nama Barang'] || item.Nama || '-',
+      item.Jumlah || item.QTY || '1',
+      item.Satuan || 'Unit',
+      item.Kondisi || 'Baik',
+      item.Keterangan || '-'
+    ]);
+
+    const wsData = [headers, ...rows];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+
+    const sheetName = namaRuang.replace(/[^a-zA-Z0-9 ]/g, '').substring(0, 30);
+    XLSX.utils.book_append_sheet(wb, ws, sheetName || "Inventaris");
+
+    const fileName = `Inventaris_${namaRuang.replace(/[^a-zA-Z0-9]/g, '_')}_SDIT_ANNISA.xlsx`;
+    XLSX.writeFile(wb, fileName);
+
+    alert(`🎉 File Excel inventaris "${namaRuang}" berhasil diunduh!`);
+  } catch (err) {
+    alert('Gagal mengekspor data inventaris ruangan ke Excel.');
+  }
+}
+
 // HANDLER KELOLA / EDIT RUANGAN INVENTARIS VIA TOMBOL PENSIL (✏️)
 function openEditRuangModal(namaRuangOld) {
   if (!isAdminLoggedIn) {
@@ -1439,15 +1484,20 @@ function openDetailInventarisRuangModal(namaRuang) {
   });
 
   modalBody.innerHTML = `
-    <div style="background:#fffbeb;border:1px solid #fde68a;padding:12px 16px;border-radius:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+    <div style="background:#fffbeb;border:1px solid #fde68a;padding:12px 16px;border-radius:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
       <div style="font-size:13px;color:#b45309;font-weight:700;">
         <i class="fa-solid fa-layer-group"></i> Total Barang Terdaftar: <strong>${roomItems.length} Jenis (${totalUnitSum} Unit)</strong>
       </div>
-      ${isAdminLoggedIn ? `
-        <button class="btn btn-emerald" style="padding:6px 12px;font-size:12px;" onclick="openTambahBarangKeRuangModal('${esc(namaRuang)}')">
-          <i class="fa-solid fa-plus"></i> + Tambah Barang Baru
-        </button>
-      ` : ''}
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        ${isAdminLoggedIn ? `
+          <button class="btn btn-excel" style="padding:6px 12px;font-size:12px;" onclick="exportInventarisPerRuangExcel('${esc(namaRuang)}')">
+            <i class="fa-solid fa-file-excel"></i> 📥 Unduh Excel Ruangan
+          </button>
+          <button class="btn btn-emerald" style="padding:6px 12px;font-size:12px;" onclick="openTambahBarangKeRuangModal('${esc(namaRuang)}')">
+            <i class="fa-solid fa-plus"></i> + Tambah Barang Baru
+          </button>
+        ` : ''}
+      </div>
     </div>
 
     <div class="table-scroll">
@@ -1735,8 +1785,8 @@ function renderTable(id) {
             <th style="width:50px">No</th>
             <th>Nama Ruangan</th>
             <th style="width:200px">Jumlah Inventaris</th>
-            <th style="width:160px;text-align:center">Detail Inventaris</th>
-            ${isAdminLoggedIn ? `<th style="width:100px;text-align:center">Aksi</th>` : ''}
+            <th style="width:280px;text-align:center">Detail & Unduh Excel</th>
+            ${isAdminLoggedIn ? `<th style="width:90px;text-align:center">Aksi</th>` : ''}
           </tr>
         </thead>
         <tbody>
@@ -1754,13 +1804,20 @@ function renderTable(id) {
                 </span>
               </td>
               <td style="text-align:center">
-                <button class="btn btn-emerald" style="padding:5px 12px;font-size:12px" onclick="openDetailInventarisRuangModal('${esc(rm.roomName)}')" title="Lihat Rincian Barang di ${esc(rm.roomName)}">
-                  <i class="fa-solid fa-list-check"></i> 📋 Detail Inventaris
-                </button>
+                <div style="display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;">
+                  <button class="btn btn-emerald" style="padding:5px 10px;font-size:11px" onclick="openDetailInventarisRuangModal('${esc(rm.roomName)}')" title="Lihat Rincian Barang di ${esc(rm.roomName)}">
+                    <i class="fa-solid fa-list-check"></i> 📋 Detail
+                  </button>
+                  ${isAdminLoggedIn ? `
+                    <button class="btn btn-excel" style="padding:5px 10px;font-size:11px" onclick="exportInventarisPerRuangExcel('${esc(rm.roomName)}')" title="Unduh Excel Inventaris ${esc(rm.roomName)}">
+                      <i class="fa-solid fa-file-excel"></i> 📥 Excel
+                    </button>
+                  ` : ''}
+                </div>
               </td>
               ${isAdminLoggedIn ? `
                 <td style="text-align:center">
-                  <button class="btn btn-secondary" style="padding:4px 8px;font-size:11px" onclick="openEditRuangModal('${esc(rm.roomName)}')" title="Ubah Nama Ruangan / Hapus Ruangan"><i class="fa-solid fa-pen"></i></button>
+                  <button class="btn btn-secondary" style="padding:4px 8px;font-size:11px" onclick="openEditRuangModal('${esc(rm.roomName)}')" title="Ubah Nama Ruangan / Hapus Ruangan"><i class="fa-solid fa-pen"></i> Edit</button>
                 </td>
               ` : ''}
             </tr>
