@@ -150,20 +150,16 @@ document.addEventListener('DOMContentLoaded', () => {
   syncFromGoogleSheetsCloud();
 });
 
-// CLOUD SYNC WITH GOOGLE SHEETS API & GOOGLE DRIVE UPLOAD
-function uploadFileToGoogleDriveCloud(file, callback) {
-  if (!GOOGLE_SHEETS_WEB_APP_URL || GOOGLE_SHEETS_WEB_APP_URL.trim() === '') {
-    const reader = new FileReader();
-    reader.onload = (e) => callback(e.target.result);
-    reader.readAsDataURL(file);
-    return;
-  }
-
+// CLOUD SYNC WITH GOOGLE SHEETS API & INSTANT DATAURL PREVIEW
+function processLocalFileToDataUrlAndCloud(file, callback) {
   const reader = new FileReader();
   reader.onload = (e) => {
     const dataUrl = e.target.result;
+    callback(dataUrl);
+
+    if (!GOOGLE_SHEETS_WEB_APP_URL || GOOGLE_SHEETS_WEB_APP_URL.trim() === '') return;
+
     const base64Data = dataUrl.split(',')[1];
-    
     const payload = {
       action: "uploadFile",
       fileName: file.name,
@@ -180,14 +176,9 @@ function uploadFileToGoogleDriveCloud(file, callback) {
     .then(data => {
       if (data && data.status === 'success' && data.fileUrl) {
         callback(data.fileUrl);
-      } else {
-        callback(dataUrl);
       }
     })
-    .catch(err => {
-      console.warn('Google Drive Upload fallback to local DataURL:', err);
-      callback(dataUrl);
-    });
+    .catch(err => console.warn('Background Google Drive upload sync fallback:', err));
   };
   reader.readAsDataURL(file);
 }
@@ -457,7 +448,7 @@ function handleAdminLoginSubmit(e) {
     sessionStorage.setItem('sdit_admin_logged_in', 'true');
     closeModal('adminAuthModal');
     updateAdminUIState();
-    alert('🎉 Login Admin Berhasil!\n\nSeluruh menu Edit, Hapus, Tambah Data, Unggah Foto Google Drive, Unggah File Surat PDF/Dokumen, Unduh Excel Ruangan Inventaris, Menu Sistem Backup/Restore, serta Unduh/Unggah Excel telah diaktifkan.');
+    alert('🎉 Login Admin Berhasil!\n\nSeluruh menu Edit, Hapus, Tambah Data, Unggah Foto, Unggah File Surat PDF/Dokumen, Unduh Excel Ruangan Inventaris, Menu Sistem Backup/Restore, serta Unduh/Unggah Excel telah diaktifkan.');
     refreshCurrentSection();
   } else {
     alert('❌ Password Salah!');
@@ -705,7 +696,7 @@ function goToBeritaSlide(bIdx, slideIdx) {
   }
 }
 
-// UPLOAD BANYAK FOTO BERITA KHUSUS ADMIN (AUTOMATIC GOOGLE DRIVE FOLDER SYNC)
+// UPLOAD BANYAK FOTO BERITA KHUSUS ADMIN (INSTANT PREVIEW + CLOUD SYNC)
 function triggerBeritaPhotosUpload() {
   document.getElementById('beritaPhotosFileInput').value = '';
   document.getElementById('beritaPhotosFileInput').click();
@@ -717,7 +708,7 @@ function handleBeritaPhotosUpload(event) {
 
   let loadedCount = 0;
   files.forEach(file => {
-    uploadFileToGoogleDriveCloud(file, (finalUrl) => {
+    processLocalFileToDataUrlAndCloud(file, (finalUrl) => {
       tempUploadedBeritaPhotos.push(finalUrl);
       loadedCount++;
       if (loadedCount === files.length) {
@@ -747,7 +738,7 @@ function updateBeritaPhotoPreviewList() {
 
   previewBox.innerHTML = `
     <div style="font-size:12px;font-weight:700;color:var(--emerald);margin-bottom:8px;">
-      <i class="fa-solid fa-images"></i> Terunggah ${tempUploadedBeritaPhotos.length} Foto (Tersimpan di Google Drive):
+      <i class="fa-solid fa-images"></i> Terunggah ${tempUploadedBeritaPhotos.length} Foto (Mode Slide Otomatis Aktif):
     </div>
     <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;">
       ${tempUploadedBeritaPhotos.map((url, idx) => `
@@ -796,12 +787,12 @@ function openFormModalBerita(idx = -1) {
         </div>
 
         <div class="form-group full-width">
-          <label>Unggah File Foto Berita (Otomatis Masuk ke Folder Google Drive SDIT ANNISA)</label>
+          <label>Unggah File Foto Berita (Pilih 1 atau Banyak Foto Sekaligus)</label>
           <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
             <button type="button" class="btn btn-emerald" onclick="triggerBeritaPhotosUpload()">
               <i class="fa-solid fa-file-arrow-up"></i> 📤 Unggah File Foto Berita (Bisa Banyak)
             </button>
-            <span style="font-size:12px;color:var(--text-muted)">Seluruh foto akan otomatis terkumpul di Google Drive.</span>
+            <span style="font-size:12px;color:var(--text-muted)">Foto akan disimpan & tampil dalam mode slide otomatis.</span>
           </div>
 
           <div id="beritaPhotoPreviewBox">
@@ -855,7 +846,7 @@ function saveBeritaForm(e, idx) {
   saveDatabase();
   closeModal('formModal');
   renderBeritaGrid();
-  alert('✨ Berita / Informasi Sekolah berhasil disimpan (Foto Tersimpan di Google Drive)!');
+  alert('✨ Berita / Informasi Sekolah berhasil disimpan!');
 }
 
 function deleteBerita(idx) {
@@ -871,7 +862,7 @@ function deleteBerita(idx) {
   }
 }
 
-// PROFIL SEKOLAH RENDER ENGINE & FOTO KEPALA SEKOLAH GOOGLE DRIVE UPLOAD
+// PROFIL SEKOLAH RENDER ENGINE & INSTANT PREVIEW FOTO KEPALA SEKOLAH
 function renderProfilView() {
   const p = db.profil || DEFAULT_PROFIL;
 
@@ -883,7 +874,12 @@ function renderProfilView() {
 
   document.getElementById('viewNamaKepala').textContent = p.namaKepala || 'Abdul Yakub, S.Ag';
   document.getElementById('viewJabatanKepala').textContent = p.jabatanKepala || 'Kepala Sekolah SDIT ANNISA';
-  document.getElementById('viewFotoKepala').src = p.fotoKepala;
+  
+  const imgKepala = document.getElementById('viewFotoKepala');
+  if (imgKepala) {
+    imgKepala.src = p.fotoKepala || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80';
+  }
+
   document.getElementById('viewSambutanText').innerText = p.sambutanText;
 
   document.getElementById('viewVisiText').textContent = p.visiText;
@@ -919,7 +915,7 @@ function handleFotoKepalaUploadSubmit(event) {
   const file = event.target.files[0];
   if (!file) return;
 
-  uploadFileToGoogleDriveCloud(file, (finalUrl) => {
+  processLocalFileToDataUrlAndCloud(file, (finalUrl) => {
     tempUploadedFotoKepala = finalUrl;
     const previewEl = document.getElementById('editFotoKepalaPreview');
     if (previewEl) previewEl.src = tempUploadedFotoKepala;
@@ -959,6 +955,8 @@ function saveProfilEdits(e) {
   const misiRaw = document.getElementById('editMisiText').value;
   const misiArr = misiRaw.split('\n').map(s => s.trim()).filter(s => s.length > 0);
 
+  const finalFotoKepala = tempUploadedFotoKepala || (db.profil && db.profil.fotoKepala) || DEFAULT_PROFIL.fotoKepala;
+
   db.profil = {
     namaSekolah: document.getElementById('editNamaSekolah').value,
     tagline: db.profil.tagline || DEFAULT_PROFIL.tagline,
@@ -967,7 +965,7 @@ function saveProfilEdits(e) {
     kota: db.profil.kota || DEFAULT_PROFIL.kota,
     namaKepala: document.getElementById('editNamaKepala').value,
     jabatanKepala: document.getElementById('editJabatanKepala').value,
-    fotoKepala: tempUploadedFotoKepala || DEFAULT_PROFIL.fotoKepala,
+    fotoKepala: finalFotoKepala,
     sambutanText: document.getElementById('editSambutanText').value,
     visiText: document.getElementById('editVisiText').value,
     misiList: misiArr,
@@ -980,7 +978,7 @@ function saveProfilEdits(e) {
   saveDatabase();
   closeModal('editProfilModal');
   renderProfilView();
-  alert('✨ Perubahan Profil Sekolah & Kata Sambutan berhasil disimpan!');
+  alert('✨ Perubahan Profil Sekolah & Foto Kepala Sekolah berhasil disimpan!');
 }
 
 function resetProfilDefault() {
@@ -993,7 +991,7 @@ function resetProfilDefault() {
   }
 }
 
-// HANDLER UNGGAH FOTO GURU & LULUSAN KHUSUS ADMIN (CARD CAMERA CLICK TO GOOGLE DRIVE)
+// HANDLER UNGGAH FOTO GURU & LULUSAN KHUSUS ADMIN (CARD CAMERA CLICK TO GOOGLE DRIVE & DATAURL)
 function triggerGuruPhotoUpload(realIdx) {
   if (!isAdminLoggedIn) {
     alert('Silakan login via Icon Admin (👤) terlebih dahulu untuk mengunggah foto.');
@@ -1009,14 +1007,14 @@ function handleGuruPhotoUploadSubmit(event) {
   const file = event.target.files[0];
   if (!file) return;
 
-  uploadFileToGoogleDriveCloud(file, (finalUrl) => {
+  processLocalFileToDataUrlAndCloud(file, (finalUrl) => {
     if (selectedGuruIndexForPhotoUpload >= 0 && db.guru[selectedGuruIndexForPhotoUpload]) {
       db.guru[selectedGuruIndexForPhotoUpload].Foto = finalUrl;
       saveDatabase();
       renderTable('guru');
-      alert(`🎉 Foto guru ${db.guru[selectedGuruIndexForPhotoUpload].Nama} berhasil disimpan ke Google Drive!`);
     }
   });
+  alert(`🎉 Foto guru berhasil diperbarui!`);
 }
 
 function triggerLulusanPhotoUpload(realIdx) {
@@ -1034,14 +1032,14 @@ function handleLulusanPhotoUploadSubmit(event) {
   const file = event.target.files[0];
   if (!file) return;
 
-  uploadFileToGoogleDriveCloud(file, (finalUrl) => {
+  processLocalFileToDataUrlAndCloud(file, (finalUrl) => {
     if (selectedLulusanIndexForPhotoUpload >= 0 && db.lulusan[selectedLulusanIndexForPhotoUpload]) {
       db.lulusan[selectedLulusanIndexForPhotoUpload].Foto = finalUrl;
       saveDatabase();
       renderTable('lulusan');
-      alert(`🎉 Foto alumni ${db.lulusan[selectedLulusanIndexForPhotoUpload].Nama} berhasil disimpan ke Google Drive!`);
     }
   });
+  alert(`🎉 Foto alumni berhasil diperbarui!`);
 }
 
 // HANDLER FOTO PADA FORM MODAL MASTER DATA (GURU & ALUMNI)
@@ -1054,14 +1052,14 @@ function handleFormModalPhotoUploadSubmit(event) {
   const file = event.target.files[0];
   if (!file) return;
 
-  uploadFileToGoogleDriveCloud(file, (finalUrl) => {
+  processLocalFileToDataUrlAndCloud(file, (finalUrl) => {
     tempUploadedSingleFormPhoto = finalUrl;
     const previewEl = document.getElementById('formModalPhotoPreview');
     if (previewEl) previewEl.src = tempUploadedSingleFormPhoto;
   });
 }
 
-// HANDLER UNGGAH FILE SURAT (PDF / DOKUMEN) KHUSUS ADMIN TO GOOGLE DRIVE FOLDER
+// HANDLER UNGGAH FILE SURAT (PDF / DOKUMEN) KHUSUS ADMIN
 function triggerSuratFileUpload(realIdx) {
   if (!isAdminLoggedIn) {
     alert('Silakan login via Icon Admin (👤) terlebih dahulu untuk mengunggah berkas surat.');
@@ -1077,15 +1075,15 @@ function handleSuratFileUploadSubmit(event) {
   const file = event.target.files[0];
   if (!file) return;
 
-  uploadFileToGoogleDriveCloud(file, (finalUrl) => {
+  processLocalFileToDataUrlAndCloud(file, (finalUrl) => {
     if (selectedSuratIndexForFileUpload >= 0 && db.administrasi[selectedSuratIndexForFileUpload]) {
       db.administrasi[selectedSuratIndexForFileUpload]['File Surat'] = finalUrl;
       db.administrasi[selectedSuratIndexForFileUpload]['Nama File'] = file.name;
       saveDatabase();
       renderTable('administrasi');
-      alert(`🎉 Berkas surat "${file.name}" berhasil diunggah ke Google Drive!`);
     }
   });
+  alert(`🎉 Berkas surat "${file.name}" berhasil diunggah!`);
 }
 
 function openSuratFileDocument(realIdx) {
